@@ -1,0 +1,216 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String   @id @default(cuid())
+  email             String   @unique
+  password          String?
+  walletAddress     String?  @unique @map("wallet_address")
+  firstName         String?  @map("first_name")
+  lastName          String?  @map("last_name")
+  phoneNumber       String?  @map("phone_number")
+  isEmailVerified   Boolean  @default(false) @map("is_email_verified")
+  isKycVerified     Boolean  @default(false) @map("is_kyc_verified")
+  twoFactorSecret   String?  @map("two_factor_secret")
+  isTwoFactorEnabled Boolean @default(false) @map("is_two_factor_enabled")
+  role              UserRole @default(USER)
+  status            UserStatus @default(ACTIVE)
+  referralCode      String?  @unique @map("referral_code")
+  referredBy        String?  @map("referred_by")
+  totalInvested     Float    @default(0) @map("total_invested")
+  totalEarnings     Float    @default(0) @map("total_earnings")
+  totalWithdrawn    Float    @default(0) @map("total_withdrawn")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  investments       Investment[]
+  transactions      Transaction[]
+  withdrawals       Withdrawal[]
+  notifications     Notification[]
+  referrals         User[]       @relation("UserReferrals")
+  referrer          User?        @relation("UserReferrals", fields: [referredBy], references: [id])
+
+  @@map("users")
+}
+
+model InvestmentPlan {
+  id                String   @id @default(cuid())
+  name              String
+  description       String?
+  durationDays      Int      @map("duration_days")
+  returnPercentage  Float    @map("return_percentage")
+  minAmount         Float    @map("min_amount")
+  maxAmount         Float    @map("max_amount")
+  isActive          Boolean  @default(true) @map("is_active")
+  totalInvestments  Int      @default(0) @map("total_investments")
+  totalAmount       Float    @default(0) @map("total_amount")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  investments       Investment[]
+
+  @@map("investment_plans")
+}
+
+model Investment {
+  id                String            @id @default(cuid())
+  userId            String            @map("user_id")
+  planId            String            @map("plan_id")
+  amount            Float
+  currency          String            @default("ETH")
+  expectedReturn    Float             @map("expected_return")
+  actualReturn      Float?            @map("actual_return")
+  status            InvestmentStatus  @default(PENDING)
+  startDate         DateTime?         @map("start_date")
+  maturityDate      DateTime?         @map("maturity_date")
+  transactionHash   String?           @map("transaction_hash")
+  blockchainNetwork String?           @map("blockchain_network")
+  isCompounded      Boolean           @default(false) @map("is_compounded")
+  createdAt         DateTime          @default(now()) @map("created_at")
+  updatedAt         DateTime          @updatedAt @map("updated_at")
+
+  // Relations
+  user              User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan              InvestmentPlan    @relation(fields: [planId], references: [id])
+  transactions      Transaction[]
+
+  @@map("investments")
+}
+
+model Transaction {
+  id                String            @id @default(cuid())
+  userId            String            @map("user_id")
+  investmentId      String?           @map("investment_id")
+  type              TransactionType
+  amount            Float
+  currency          String            @default("ETH")
+  status            TransactionStatus @default(PENDING)
+  transactionHash   String?           @map("transaction_hash")
+  blockchainNetwork String?           @map("blockchain_network")
+  fromAddress       String?           @map("from_address")
+  toAddress         String?           @map("to_address")
+  gasUsed           String?           @map("gas_used")
+  gasFee            Float?            @map("gas_fee")
+  description       String?
+  createdAt         DateTime          @default(now()) @map("created_at")
+  updatedAt         DateTime          @updatedAt @map("updated_at")
+
+  // Relations
+  user              User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  investment        Investment?       @relation(fields: [investmentId], references: [id])
+
+  @@map("transactions")
+}
+
+model Withdrawal {
+  id                String            @id @default(cuid())
+  userId            String            @map("user_id")
+  amount            Float
+  currency          String            @default("ETH")
+  walletAddress     String            @map("wallet_address")
+  status            WithdrawalStatus  @default(PENDING)
+  transactionHash   String?           @map("transaction_hash")
+  blockchainNetwork String?           @map("blockchain_network")
+  adminNotes        String?           @map("admin_notes")
+  processedAt       DateTime?         @map("processed_at")
+  createdAt         DateTime          @default(now()) @map("created_at")
+  updatedAt         DateTime          @updatedAt @map("updated_at")
+
+  // Relations
+  user              User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("withdrawals")
+}
+
+model Notification {
+  id                String              @id @default(cuid())
+  userId            String              @map("user_id")
+  title             String
+  message           String
+  type              NotificationType
+  isRead            Boolean             @default(false) @map("is_read")
+  data              Json?
+  createdAt         DateTime            @default(now()) @map("created_at")
+
+  // Relations
+  user              User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+model SystemSettings {
+  id                String   @id @default(cuid())
+  key               String   @unique
+  value             String
+  description       String?
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@map("system_settings")
+}
+
+// Enums
+enum UserRole {
+  USER
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  BANNED
+}
+
+enum InvestmentStatus {
+  PENDING
+  ACTIVE
+  COMPLETED
+  CANCELLED
+  FAILED
+}
+
+enum TransactionType {
+  DEPOSIT
+  WITHDRAWAL
+  INVESTMENT
+  RETURN
+  FEE
+  REFERRAL_BONUS
+}
+
+enum TransactionStatus {
+  PENDING
+  CONFIRMED
+  FAILED
+  CANCELLED
+}
+
+enum WithdrawalStatus {
+  PENDING
+  APPROVED
+  PROCESSING
+  COMPLETED
+  REJECTED
+  CANCELLED
+}
+
+enum NotificationType {
+  INVESTMENT
+  WITHDRAWAL
+  TRANSACTION
+  SYSTEM
+  PROMOTION
+  SECURITY
+}
