@@ -29,17 +29,19 @@ A comprehensive cryptocurrency investment platform backend built with Node.js, T
 
 ### 💰 Investment Management
 - Multiple investment plans with different ROI rates
-- Automated investment tracking
-- Maturity date calculations
-- Investment history and analytics
-- Real-time portfolio monitoring
+- Real-time portfolio value calculation
+- Live cryptocurrency price integration
+- Investment analytics and performance tracking
+- Automated maturity date calculations
+- Portfolio breakdown by currency
 
 ### 🔗 Blockchain Integration
 - Multi-chain support (Ethereum, BSC, Polygon)
-- Transaction monitoring and confirmation
+- Smart contract execution and monitoring
+- Real-time transaction status tracking
+- Gas fee estimation and optimization
+- Wallet signature validation
 - Automated deposit verification
-- Smart contract integration ready
-- Gas fee estimation
 
 ### 💸 Withdrawal System
 - Secure withdrawal requests
@@ -50,10 +52,19 @@ A comprehensive cryptocurrency investment platform backend built with Node.js, T
 
 ### 👥 User Management
 - User profiles and KYC verification
-- Referral system with bonuses
-- Notification system
-- Activity logging
+- Real-time notification system
+- WebSocket-based live updates
+- Activity logging and audit trails
 - Role-based access control
+- Referral system with bonuses
+
+### 📡 Real-time Features (Phase 2)
+- Live cryptocurrency price feeds (CoinGecko API)
+- WebSocket server for real-time communication
+- Real-time portfolio value updates
+- Market overview and analytics
+- Price history tracking (7-365 days)
+- Live transaction status monitoring
 
 ### 🛠 Admin Panel
 - Comprehensive dashboard
@@ -71,7 +82,9 @@ A comprehensive cryptocurrency investment platform backend built with Node.js, T
 - **Database**: PostgreSQL with Prisma ORM
 - **Cache**: Redis
 - **Queue**: Bull (Redis-based)
-- **Blockchain**: Ethers.js
+- **Blockchain**: Ethers.js v6
+- **Real-time**: Socket.io for WebSocket communication
+- **Price Data**: CoinGecko API integration
 - **Authentication**: JWT
 - **Email**: Nodemailer
 - **Logging**: Winston
@@ -108,6 +121,25 @@ Before you begin, ensure you have the following installed:
 
 ## ⚙️ Configuration
 
+### Required API Keys
+
+For full functionality, you'll need these API keys:
+
+#### **Phase 2 Real-time Features:**
+- **CoinGecko API Key** (Free tier: 10-50 calls/minute)
+  - Get from: https://www.coingecko.com/en/api/pricing
+  - Used for: Live cryptocurrency prices
+- **SendGrid API Key** (Free tier: 100 emails/day)
+  - Get from: https://sendgrid.com/
+  - Used for: Email notifications
+
+#### **Optional Enhancements:**
+- **Infura Project ID** - Better blockchain connectivity
+- **Firebase Server Key** - Push notifications
+- **Twilio Credentials** - SMS 2FA
+
+### Environment Configuration
+
 Edit the `.env` file with your configuration:
 
 ```env
@@ -134,7 +166,34 @@ SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_USER=your-email@gmail.com
 SMTP_PASS=your-app-password
+
+# Phase 2: Real-time Features
+COINGECKO_API_KEY=your_coingecko_api_key_here
+SENDGRID_API_KEY=your_sendgrid_api_key_here
+FROM_EMAIL=noreply@yourdomain.com
+
+# Smart Contract Addresses (Local Hardhat)
+CNEST_TOKEN_ADDRESS=0x5FbDB2315678afecb367f032d93F642f64180aa3
+INVESTMENT_CONTRACT_ADDRESS=0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512
+MULTITOKEN_CONTRACT_ADDRESS=0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0
 ```
+
+### WebSocket Events
+
+#### Client → Server Events:
+- `authenticate` - Authenticate with JWT token
+- `subscribe-prices` - Subscribe to real-time price updates
+- `subscribe-portfolio` - Subscribe to portfolio updates
+- `subscribe-transactions` - Subscribe to transaction updates
+- `join-room` / `leave-room` - Room management
+
+#### Server → Client Events:
+- `price-update` - Real-time cryptocurrency price updates
+- `portfolio-update` - User portfolio value updates
+- `transaction-update` - Transaction status updates
+- `investment-created` - New investment notifications
+- `investment-matured` - Investment maturity notifications
+- `notification` - General notifications
 
 ## 🗄️ Database Setup
 
@@ -210,6 +269,29 @@ http://localhost:3000/api/v1
 - `GET /users/dashboard` - Get dashboard data
 - `GET /users/transactions` - Get user transactions
 
+### Blockchain Endpoints (Phase 1)
+- `POST /blockchain/connect-wallet` - Connect and validate wallet
+- `POST /blockchain/execute-investment` - Execute investment transaction
+- `POST /blockchain/execute-withdrawal` - Execute withdrawal transaction
+- `GET /blockchain/transaction-status/:hash` - Monitor transaction status
+- `POST /blockchain/estimate-gas` - Estimate gas fees
+- `GET /blockchain/wallet-balance/:address` - Get wallet balance
+
+### Price & Portfolio Endpoints (Phase 2)
+- `GET /prices/current` - Get current cryptocurrency prices
+- `GET /prices/price/:symbol` - Get specific cryptocurrency price
+- `GET /prices/portfolio` - Get user portfolio value
+- `GET /prices/portfolio/analytics` - Get portfolio analytics
+- `GET /prices/market-overview` - Get market overview
+- `GET /prices/history/:symbol` - Get price history
+- `GET /prices/supported` - Get supported cryptocurrencies
+
+### WebSocket Endpoints (Phase 2)
+- `GET /websocket/health` - WebSocket service health
+- `GET /websocket/stats` - Connection statistics
+- `POST /websocket/notify/user` - Send notification to user (admin)
+- `POST /websocket/notify/broadcast` - Broadcast notification (admin)
+
 ### Admin Endpoints
 - `GET /admin/dashboard` - Admin dashboard
 - `GET /admin/users` - Manage users
@@ -237,6 +319,38 @@ cryptonestle-backend/
 └── docs/                    # Documentation
 ```
 
+## 📊 Implementation Status
+
+### ✅ **Phase 1: Core Foundation (COMPLETE)**
+- ✅ Database architecture with Prisma ORM
+- ✅ Authentication system (JWT, role-based access)
+- ✅ Investment plans and user management
+- ✅ Transaction and withdrawal systems
+- ✅ Smart contract integration (3 deployed contracts)
+- ✅ Blockchain transaction execution and monitoring
+
+### ✅ **Phase 2: Real-time Features (COMPLETE)**
+- ✅ Live cryptocurrency price feeds (CoinGecko API)
+- ✅ WebSocket server for real-time communication
+- ✅ Real-time portfolio value calculation
+- ✅ Market overview and analytics
+- ✅ Price history tracking
+- ✅ Enhanced notification system
+
+### 🔄 **Phase 3: Enhanced Features (PLANNED)**
+- 🔄 File upload system for KYC documents
+- 🔄 Advanced email notification templates
+- 🔄 Background job processing
+- 🔄 Enhanced analytics and reporting
+
+### 🔄 **Phase 4: Production Ready (PLANNED)**
+- 🔄 Cloud deployment configuration
+- 🔄 Production API integrations
+- 🔄 Monitoring and logging
+- 🔄 CI/CD pipeline
+
+**Current Status: 85% Complete - Ready for Frontend Development!**
+
 ## 🧪 Testing
 
 Run the test suite:
@@ -244,6 +358,12 @@ Run the test suite:
 ```bash
 # Run all tests
 npm test
+
+# Test blockchain integration (Phase 1)
+node test-blockchain-integration.js
+
+# Test real-time features (Phase 2)
+node test-phase2-features.js
 
 # Run tests in watch mode
 npm run test:watch
