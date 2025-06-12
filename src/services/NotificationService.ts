@@ -14,6 +14,14 @@ export interface NotificationData {
 
 export class NotificationService {
   private emailService = new EmailService();
+  private webSocketService?: any; // Will be injected to avoid circular dependency
+
+  /**
+   * Set WebSocket service for real-time notifications
+   */
+  setWebSocketService(webSocketService: any): void {
+    this.webSocketService = webSocketService;
+  }
 
   /**
    * Create a new notification
@@ -21,7 +29,7 @@ export class NotificationService {
   async createNotification(notificationData: NotificationData): Promise<void> {
     try {
       // Create notification in database
-      await prisma.notification.create({
+      const notification = await prisma.notification.create({
         data: {
           userId: notificationData.userId,
           title: notificationData.title,
@@ -30,6 +38,19 @@ export class NotificationService {
           data: notificationData.data,
         },
       });
+
+      // Send real-time notification via WebSocket
+      if (this.webSocketService) {
+        this.webSocketService.sendNotification(notificationData.userId, {
+          id: notification.id,
+          title: notificationData.title,
+          message: notificationData.message,
+          type: notificationData.type,
+          data: notificationData.data,
+          createdAt: notification.createdAt,
+          isRead: false
+        });
+      }
 
       // Send email notification if requested
       if (notificationData.sendEmail) {

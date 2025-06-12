@@ -18,6 +18,9 @@ import investmentRoutes from './routes/investment';
 import transactionRoutes from './routes/transaction';
 import withdrawalRoutes from './routes/withdrawal';
 import adminRoutes from './routes/admin';
+import blockchainRoutes from './routes/blockchain';
+import priceRoutes from './routes/price';
+import websocketRoutes, { webSocketController } from './routes/websocket';
 
 // Load environment variables
 dotenv.config();
@@ -73,6 +76,9 @@ app.use(`${API_PREFIX}/investments`, investmentRoutes);
 app.use(`${API_PREFIX}/transactions`, transactionRoutes);
 app.use(`${API_PREFIX}/withdrawals`, withdrawalRoutes);
 app.use(`${API_PREFIX}/admin`, adminRoutes);
+app.use(`${API_PREFIX}/blockchain`, blockchainRoutes);
+app.use(`${API_PREFIX}/prices`, priceRoutes);
+app.use(`${API_PREFIX}/websocket`, websocketRoutes);
 
 // Welcome route
 app.get('/', (req, res) => {
@@ -107,22 +113,41 @@ const gracefulShutdown = async (signal: string) => {
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
-// Start server
+// Start server with WebSocket support
+import { createServer } from 'http';
+import { WebSocketService } from './services/WebSocketService';
+import { NotificationService } from './services/NotificationService';
+
 const startServer = async () => {
   try {
     // Test database connection
     await prisma.$connect();
     logger.info('Database connected successfully');
 
-    const server = app.listen(PORT, () => {
+    // Create HTTP server
+    const httpServer = createServer(app);
+
+    // Initialize WebSocket service
+    const webSocketService = new WebSocketService(httpServer);
+
+    // Initialize notification service with WebSocket integration
+    const notificationService = new NotificationService();
+    notificationService.setWebSocketService(webSocketService);
+
+    // Set WebSocket service in controller
+    webSocketController.setWebSocketService(webSocketService);
+
+    httpServer.listen(PORT, () => {
       logger.info(`🚀 Cryptonestle API server is running on port ${PORT}`);
+      logger.info(`📡 WebSocket server initialized and ready`);
       logger.info(`📚 Environment: ${process.env.NODE_ENV}`);
       logger.info(`🔗 Health check: http://localhost:${PORT}/health`);
       logger.info(`📖 API Base URL: http://localhost:${PORT}${API_PREFIX}`);
+      logger.info(`🌐 WebSocket URL: ws://localhost:${PORT}`);
     });
 
     // Keep the server running
-    return server;
+    return httpServer;
   } catch (error) {
     logger.error('Failed to start server:', error);
     process.exit(1);
